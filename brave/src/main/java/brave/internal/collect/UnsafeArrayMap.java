@@ -14,7 +14,6 @@
 package brave.internal.collect;
 
 import java.lang.reflect.Array;
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -216,8 +215,9 @@ public class UnsafeArrayMap<K, V> implements Map<K, V> {
   }
 
   final class EntrySetView extends SetView<Map.Entry<K, V>> {
+
     @Override Map.Entry<K, V> elementAtArrayIndex(int i) {
-      return new SimpleImmutableEntry<>(key(i), value(i + 1));
+      return new Entry(i);
     }
 
     @Override public boolean contains(Object o) {
@@ -226,6 +226,49 @@ public class UnsafeArrayMap<K, V> implements Map<K, V> {
       int i = arrayIndexOfKey(that.getKey());
       if (i == -1) return false;
       return value(i + 1).equals(that.getValue());
+    }
+
+    final class Entry implements Map.Entry<K, V> {
+
+      final int index;
+
+      Entry(int index) {
+        this.index = index;
+      }
+
+      @Override
+      public K getKey() {
+        return key(index);
+      }
+
+      @Override
+      public V getValue() {
+        return value(index + 1);
+      }
+
+      @Override
+      public V setValue(V value) {
+        throw new UnsupportedOperationException();
+      }
+
+      @Override
+      public boolean equals(Object o) {
+        if (this == o) { return true; }
+
+        if (!(o instanceof Map.Entry)) { return false; }
+        Map.Entry<?, ?> entry = (Map.Entry<?, ?>) o;
+        return getKey().equals(entry.getKey()) && getValue().equals(entry.getValue());
+      }
+
+      @Override
+      public int hashCode() {
+        return index;
+      }
+
+      @Override
+      public String toString() {
+        return getKey() + "=" + getValue();
+      }
     }
   }
 
